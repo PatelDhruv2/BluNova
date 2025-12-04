@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  nginx-rtmp:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: streaming-server
+    ports:
+      - "1935:1935"  # RTMP port
+      - "8090:8090"  # HTTP port (using 8090 instead of 8080)
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - hls-data:/var/www/hls
+      - dash-data:/var/www/dash
+    restart: unless-stopped
+    networks:
+      - streaming-network
+
+volumes:
+  hls-data:
+  dash-data:
+
+networks:
+  streaming-network:
+    driver: bridge

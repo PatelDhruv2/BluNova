@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+
+  videos        Video[]
+  comments      Comment[]
+  subscriptions Subscription[]
+
+  streams     Stream[] // ✅ ONE → MANY
+  streamViews StreamViewer[]
+}
+
+model Stream {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  streamKey String   @unique
+  title     String?
+  isLive    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  viewers StreamViewer[]
+}
+
+model StreamViewer {
+  id Int @id @default(autoincrement())
+
+  streamId Int
+  userId   Int?
+
+  ipAddress String?
+  joinedAt  DateTime @default(now())
+
+  stream Stream @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model Video {
+  id           Int       @id @default(autoincrement())
+  title        String
+  description  String
+  duration     Int
+  uploader     User      @relation(fields: [uploaderId], references: [id])
+  uploaderId   Int
+  videoUrl     String
+  thumbnailUrl String
+  uploadedAt   DateTime  @default(now())
+  comments     Comment[]
+  views        Int       @default(0)
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  video     Video    @relation(fields: [videoId], references: [id])
+  videoId   Int
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  createdAt DateTime @default(now())
+}
+
+model Subscription {
+  id        Int                @id @default(autoincrement())
+  user      User               @relation(fields: [userId], references: [id])
+  userId    Int
+  plan      Plan
+  status    SubscriptionStatus @default(ACTIVE)
+  startDate DateTime           @default(now())
+  endDate   DateTime?
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Plan {
+  FREE
+  PREMIUM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+}
