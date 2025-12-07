@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Ultra Stream</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <style>
+    /* 1. Global Reset & Typography */
+    :root {
+      --color-background-dark: #0A0A0E;
+      --color-surface-dark: #1A1A22;
+      --color-primary-accent: #6C63FF; /* Deep Purple */
+      --color-secondary-accent: #00E676; /* Vibrant Green */
+      --color-text-light: #F0F0F5;
+      --color-shadow-blur: rgba(0, 0, 0, 0.7);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--color-background-dark);
+      color: var(--color-text-light);
+      font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+      line-height: 1.6;
+    }
+
+    /* 2. Header and Title */
+    .stream-header {
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .stream-header h1 {
+      font-size: 2.5em;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      /* Gradient Text Effect */
+      background: linear-gradient(90deg, var(--color-primary-accent), var(--color-secondary-accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 10px rgba(108, 99, 255, 0.5);
+    }
+
+    .stream-header .status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1em;
+      margin-top: 5px;
+      color: var(--color-secondary-accent);
+      font-weight: 600;
+    }
+
+    .stream-header .status::before {
+      content: '';
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      background-color: var(--color-secondary-accent);
+      border-radius: 50%;
+      margin-right: 8px;
+      animation: pulse 1.5s infinite;
+      box-shadow: 0 0 5px var(--color-secondary-accent);
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* 3. Video Container */
+    .video-container {
+      background: var(--color-surface-dark);
+      border-radius: 16px;
+      padding: 20px;
+      max-width: 90%;
+      width: 1000px;
+      /* Ultra-soft 3D shadow */
+      box-shadow: 
+        0 25px 50px -12px var(--color-shadow-blur), /* Large, soft shadow */
+        0 0 0 1px rgba(255, 255, 255, 0.05); /* Subtle inner border */
+      
+      /* Subtle border gradient */
+      border: 1px solid transparent;
+      background-clip: padding-box;
+    }
+
+    /* 4. Video Element */
+    #video {
+      width: 100%;
+      height: auto;
+      display: block;
+      min-height: 300px; /* Ensure visibility even before load */
+      border-radius: 10px;
+      background-color: #000;
+      /* Subtle hover effect */
+      transition: transform 0.3s ease-in-out;
+    }
+
+    #video:hover {
+      transform: scale(1.005);
+    }
+
+    /* 5. Footer/Info */
+    .stream-footer {
+        margin-top: 20px;
+        font-size: 0.9em;
+        color: #A0A0B0;
+    }
+
+    /* 6. Responsive Design */
+    @media (max-width: 768px) {
+      body {
+        padding: 20px 10px;
+      }
+      .stream-header h1 {
+        font-size: 2em;
+      }
+      .video-container {
+        padding: 10px;
+      }
+      #video {
+        min-height: 200px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header class="stream-header">
+  <h1>The Nexus Live Feed</h1>
+  <div class="status">LIVE NOW</div>
+</header>
+
+<div class="video-container">
+  <video id="video" controls autoplay></video>
+</div>
+
+<footer class="stream-footer">
+    <p>Powered by HLS.js for seamless playback. Enjoy the ultra stream!</p>
+</footer>
+
+<script>
+  const video = document.getElementById('video');
+  const streamUrl = 'http://localhost:8090/hls/stream.m3u8';
+
+  if (Hls.isSupported()) {
+    const hls = new Hls();
+    hls.loadSource(streamUrl);
+    hls.attachMedia(video);
+
+    // Optional: Add HLS event listeners for diagnostics/UI feedback
+    hls.on(Hls.Events.ERROR, function (event, data) {
+      if (data.fatal) {
+        console.error('HLS Fatal Error:', data.details, data);
+        // Display a user-friendly error message if desired
+      }
+    });
+
+  } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    // Native HLS support (Safari/iOS)
+    video.src = streamUrl;
+  } else {
+    // Fallback/Error for unsupported browsers
+    const footer = document.querySelector('.stream-footer p');
+    footer.innerHTML = "Error: Your browser does not support HLS streaming.";
+  }
+</script>
+
+</body>
+</html>

@@ -1,7 +1,10 @@
 import router from "express";
 const streamRouter = router();
 import { createStream } from "../controllers/Stream";
+import { getpreviousStreams } from "../controllers/Stream";
 import { verifyToken } from "../middleware/middleware"; 
+import { updateStreamStatus } from "../controllers/Stream";
 streamRouter.post("/create", verifyToken,createStream);
-
+streamRouter.get("/previousStreams", verifyToken,getpreviousStreams);
+streamRouter.post("/updateStatus", verifyToken,updateStreamStatus);
 export default streamRouter;

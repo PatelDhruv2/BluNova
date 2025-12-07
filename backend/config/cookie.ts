@@ -1,9 +1,9 @@
 import { Response } from "express";
 
 export const setTokenCookie = (res: Response, token: string) => {
-    console.log("Token received",token);
+    // console.log("Token received",token);
   res.cookie("jwt", token, {
-    httpOnly: true,
+    httpOnly: false,
     secure: true,    
     sameSite: "none",
     maxAge: 60 * 60 * 1000 
@@ -12,7 +12,7 @@ export const setTokenCookie = (res: Response, token: string) => {
 
 export const clearTokenCookie = (res: Response) => {
     res.clearCookie("jwt", {
-        httpOnly: true,
+        httpOnly: false,
         secure: true,
         sameSite: "none"
     });
