@@ -1,26 +1,39 @@
-import express, { Request, Response } from "express";
+import express from "express";
 import dotenv from "dotenv";
-import multer from "multer";
 import cors from "cors";
-dotenv.config();
+import cookieParser from "cookie-parser";
+import http from "http";
+import uploadRouter from "./routes/uploadroute";
 import authRouter from "./routes/authRoutes";
 import streamRouter from "./routes/streamRoute";
+import { setupSocket } from "./config/socket";
+
+dotenv.config();
+
 const app = express();
-import cookieParser from "cookie-parser";
+const PORT = process.env.PORT || 3000;
+
 app.use(cookieParser());
 app.use(cors({
-  origin: process.env.FRONTEND_URL, 
-  credentials: true 
+  origin: process.env.FRONTEND_URL,
+  credentials: true
 }));
-const PORT = process.env.PORT || 3000;
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 app.use("/uploads", express.static("uploads"));
 app.use("/auth", authRouter);
 app.use("/stream", streamRouter);
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hello from TypeScript + Express backend!");
+app.use("/file", uploadRouter);
+app.get("/", (req, res) => {
+  res.send("Server running ✅");
 });
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+
+/* ✅ CORRECT WAY */
+const server = http.createServer(app);
+setupSocket(server);
+
+server.listen(PORT, () => {
+  console.log(`Server running: http://localhost:${PORT}`);
 });

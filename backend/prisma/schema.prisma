@@ -19,9 +19,12 @@ model User {
   comments      Comment[]
   subscriptions Subscription[]
 
-  streams     Stream[] // ✅ ONE → MANY
-  streamViews StreamViewer[]
+  streams       Stream[]
+  streamViews   StreamViewer[]
+
+  files UserFile[] 
 }
+
 
 model Stream {
   id        Int      @id @default(autoincrement())
@@ -33,6 +36,16 @@ model Stream {
 
   user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   viewers StreamViewer[]
+  files   UserFile[]
+}
+model Message {
+  id        String   @id @default(cuid())
+  streamId  String
+  user      String
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([streamId])
 }
 
 model StreamViewer {
@@ -81,6 +94,34 @@ model Subscription {
   startDate DateTime           @default(now())
   endDate   DateTime?
 }
+model UserFile {
+  id        Int      @id @default(autoincrement())
+
+  userId    Int
+  streamId  Int?     // ✅ VERY IMPORTANT
+
+  fileName  String
+  filePath  String
+  fileType  FileType
+  mimeType  String
+  size      Int
+
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stream Stream? @relation(fields: [streamId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([streamId])
+}
+
+enum FileType {
+  VIDEO
+  IMAGE
+  THUMBNAIL
+  DOCUMENT
+}
+
 
 enum Role {
   USER

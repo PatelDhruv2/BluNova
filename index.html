@@ -2,6 +2,28 @@
 <html>
 <head>
   <title>Ultra Stream</title>
+<form
+  action="http://localhost:3000/file/upload"
+  method="POST"
+  enctype="multipart/form-data"
+>
+  <!-- file input -->
+  <input type="file" name="file" required />
+
+  <!-- file type (must match Prisma enum) -->
+  <select name="type" required>
+    <option value="">Select file type</option>
+    <option value="VIDEO">Video</option>
+    <option value="IMAGE">Image</option>
+    <option value="THUMBNAIL">Thumbnail</option>
+    <option value="DOCUMENT">Document</option>
+  </select>
+
+  <!-- submit -->
+  <button type="submit">Upload</button>
+</form>
+
+
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     /* 1. Global Reset & Typography */

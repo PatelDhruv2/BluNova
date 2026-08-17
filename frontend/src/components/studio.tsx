@@ -7,9 +7,6 @@ import {
   Settings,
   LogOut,
   Camera,
-  X,
-  Copy,
-  Check
 } from "lucide-react";
 
 /* ✅ STREAM MODAL */
@@ -26,6 +23,12 @@ export default function StudioDashboard() {
   const [isEndingStream, setIsEndingStream] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const [streamTitle, setStreamTitle] = useState("");
+
+  /* ✅ NEW (ONLY ADDITION) */
+  const [thumbnail, setThumbnail] = useState(null);
+  const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
 
   const tabs = [
     { name: "Dashboard", icon: <BarChart2 className="w-5 h-5" /> },
@@ -45,16 +48,9 @@ export default function StudioDashboard() {
       if (!res.ok) throw new Error("Failed to fetch previous streams");
 
       const data = await res.json();
-
-      if (data?.streams?.length > 0) {
-        const filtered = data.streams.filter((s) => s.status !== "ended");
-        setPreviousStreams(filtered);
-      } else {
-        setPreviousStreams([]);
-      }
-    } catch (error) {
-      setPreviousStreams([]);
-      setErrorMessage(error.message || "Something went wrong fetching streams");
+      setPreviousStreams(data?.streams || []);
+    } catch (err) {
+      setErrorMessage(err.message || "Failed to fetch streams");
     }
   };
 
@@ -62,33 +58,68 @@ export default function StudioDashboard() {
     fetchPreviousStream();
   }, []);
 
+  /* ✅ UPLOAD THUMBNAIL (NEW, DOES NOT TOUCH UI) */
+  const uploadThumbnail = async () => {
+    if (!thumbnail) return null;
+
+    setIsUploadingThumbnail(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", thumbnail);
+
+      const res = await fetch("http://localhost:3000/file/upload", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Thumbnail upload failed");
+
+      const data = await res.json();
+      return data.fileId;
+    } catch (err) {
+      setErrorMessage(err.message);
+      return null;
+    } finally {
+      setIsUploadingThumbnail(false);
+    }
+  };
+
   const handleStartLive = async () => {
+    if (!streamTitle.trim()) {
+      setErrorMessage("Stream title is required");
+      return;
+    }
+
     setIsStartingLive(true);
 
     try {
+      const thumbnailFileId = await uploadThumbnail();
+
       const res = await fetch("http://localhost:3000/stream/create", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "My Live Stream" }),
+        body: JSON.stringify({
+          title: streamTitle,
+          thumbnailFileId,
+        }),
       });
 
-      if (!res.ok) throw new Error("End the Ongoing stream that is Live");
+      if (!res.ok) throw new Error("End the ongoing live stream first");
 
       const data = await res.json();
 
-      const info = {
+      setStreamInfo({
         url: data.rtmpUrl,
         key: data.stream.streamKey,
-      };
+      });
 
-      setStreamInfo(info);
-      setShowModal(true); // ✅ OPEN MODAL
-
-      await fetchPreviousStream();
-    } catch (error) {
-      console.error(error);
-      setErrorMessage(error.message || "Something went wrong starting the stream");
+      setShowModal(true);
+      fetchPreviousStream();
+    } catch (err) {
+      setErrorMessage(err.message);
     } finally {
       setIsStartingLive(false);
     }
@@ -105,12 +136,11 @@ export default function StudioDashboard() {
         body: JSON.stringify({ streamKey: key, status: "ended" }),
       });
 
-      if (!res.ok) throw new Error("Failed to end the stream");
+      if (!res.ok) throw new Error("Failed to end stream");
 
-      await fetchPreviousStream();
-    } catch (error) {
-      console.error(error);
-      setErrorMessage(error.message || "Something went wrong ending the stream");
+      fetchPreviousStream();
+    } catch (err) {
+      setErrorMessage(err.message);
     } finally {
       setIsEndingStream(false);
     }
@@ -135,6 +165,7 @@ export default function StudioDashboard() {
           </button>
         ))}
 
+        {/* ✅ LOGOUT (PRESERVED) */}
         <div className="mt-auto px-6 py-4">
           <button className="flex items-center gap-3 w-full px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg">
             <LogOut className="w-4 h-4" /> Logout
@@ -148,14 +179,31 @@ export default function StudioDashboard() {
           <div>
             <h2 className="text-3xl font-bold mb-6">Go Live</h2>
 
+            <input
+              type="text"
+              placeholder="Enter stream title..."
+              value={streamTitle}
+              onChange={(e) => setStreamTitle(e.target.value)}
+              className="mb-4 w-full max-w-md px-4 py-2 rounded-lg bg-gray-800 border border-gray-700"
+            />
+
+            {/* ✅ THUMBNAIL INPUT (ADDED, NO REMOVALS) */}
+            <div className="mb-6">
+              <label className="block mb-2 text-sm text-gray-400">
+                Stream Thumbnail
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setThumbnail(e.target.files?.[0])}
+                className="text-sm"
+              />
+            </div>
+
             <button
               onClick={handleStartLive}
-              disabled={isStartingLive}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg mb-10 ${
-                isStartingLive
-                  ? "bg-gray-600"
-                  : "bg-green-600 hover:bg-green-700"
-              }`}
+              disabled={isStartingLive || isUploadingThumbnail}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg mb-10 bg-green-600 hover:bg-green-700"
             >
               <Camera className="w-4 h-4" />
               {isStartingLive ? "Starting..." : "Start New Live Stream"}
@@ -215,19 +263,18 @@ export default function StudioDashboard() {
         )}
       </div>
 
-      {/* ✅ Stream Modal */}
       {showModal && (
         <StreamModal
           stream={streamInfo}
-          onClose={() => setShowModal(false)}
+          onClose={() => {
+            setShowModal(false);
+            setStreamTitle("");
+            setThumbnail(null);
+          }}
         />
       )}
 
-      {/* ✅ Error Modal */}
-      <ErrorModal
-        message={errorMessage}
-        onClose={() => setErrorMessage("")}
-      />
+      <ErrorModal message={errorMessage} onClose={() => setErrorMessage("")} />
     </div>
   );
 }

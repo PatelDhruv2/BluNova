@@ -10,7 +10,7 @@ export interface AuthRequest extends Request {
 
 // Middleware to verify JWT from HTTP-only cookie
 export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction) => {
-  console.log("Verifying token from cookies:", req.cookies);
+  //  console.log("Verifying token from cookies:", req.cookies);
   const token = req.cookies.jwt;
 
   if (!token) {
@@ -20,7 +20,7 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded; // attach user info to request
-    console.log("user info",decoded);
+    // console.log("user info",decoded);
     next();
   } catch (err) {
     return res.status(403).json({ message: "Invalid token" });

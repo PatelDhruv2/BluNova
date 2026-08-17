@@ -6,11 +6,13 @@ import { BrowserRouter } from 'react-router-dom'
 import Signup from './components/Signup'
 import StudioDashboard from './components/studio'
 import ProtectedRoute from './components/Protectedroutes'
+import StreamViewer from './components/streamViewer'
 function App() {
   
 
   return (
    <BrowserRouter>
+   
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/signup" element={
@@ -18,6 +20,12 @@ function App() {
         } /> 
       <Route path="/studio/:id" element={
         <ProtectedRoute><StudioDashboard/></ProtectedRoute>
+        
+        } />
+      <Route path="/watch/:streamId" element={
+        <ProtectedRoute>
+          <StreamViewer/>
+        </ProtectedRoute>
         
         } />
     </Routes>

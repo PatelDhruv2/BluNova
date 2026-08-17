@@ -12,6 +12,8 @@ declare global {
         interface Request {
             user?: User; // optional because not every request will have it
         }
+        interface Response {
+        }
     }
 }
 export const sendSignupOtp = async (req: Request, res: Response) => {
@@ -59,7 +61,12 @@ const login = async (req: Request, res: Response) => {
         if (!passwordMatch) {
             return res.status(400).json({ message: "Invalid email or password" });
         }
-        const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET!, { expiresIn: '1h' });
+        const username = await prisma.user.findUnique({
+            where: { email },
+            select: { name: true }
+        });
+        console.log("User logged in:", username);
+        const token = jwt.sign({ userId: user.id, email: user.email, name: username.name }, JWT_SECRET!, { expiresIn: '1h' });
         const cook = await setTokenCookie(res, token);
         return res.status(200).json({ message: "Login successful", token });
     } catch (e) {
@@ -110,9 +117,9 @@ export const verifySignupOtp = async (req: Request, res: Response) => {
                 password: hashedPassword
             }
         });
-
+        console.log("New user created:", newUser);
         const token = jwt.sign(
-            { userId: newUser.id, email: newUser.email },
+            { userId: newUser.id, email: newUser.email, name: newUser.name },
             JWT_SECRET!,
             { expiresIn: '1h' }
         );
